@@ -38,7 +38,8 @@ async function run() {
         await client.connect();
 
 
-        const botanicalCollection = client.db("botanicalDB").collection("botanical")
+        // const botanicalCollection = client.db("botanicalDB").collection("botanical")
+        const botanicalCollection = client.db("botanicalDB").collection("products")
 
 
         app.get('/products', async (req, res) => {
