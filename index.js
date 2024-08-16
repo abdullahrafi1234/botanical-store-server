@@ -47,6 +47,76 @@ async function run() {
         })
 
 
+          //   pagination
+
+          app.get('/count', async (req, res) => {
+            const {name, category, minPrice, maxPrice } = req.query;
+        
+            const query = {};
+        
+            if (name) {
+                query.name = { $in: name.split(',') };
+            }
+            if (category) {
+                query.category = { $in: category.split(',') };
+            }
+            if (minPrice && maxPrice) {
+                query.price = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+            }
+        
+            try {
+                const count = await botanicalCollection.countDocuments(query);
+                res.send({ count });
+            } catch (error) {
+                res.status(500).send({ error: 'Error fetching count' });
+            }
+        });
+        
+        // Route to get paginated and filtered products
+        app.get('/pagination', async (req, res) => {
+            const size = parseInt(req.query.size);
+            const page = parseInt(req.query.page) - 1;
+        
+            // Filters
+            const {name, category, minPrice, maxPrice, filter } = req.query;
+        
+            const query = {};
+        
+            if (name) {
+                query.name = { $in: name.split(',') };
+            }
+        
+            if (category) {
+                query.category = { $in: category.split(',') };
+            }
+        
+            if (minPrice && maxPrice) {
+                query.price = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+            }
+        
+            if (filter) {
+                query.name = { $regex: filter, $options: 'i' }; // Case-insensitive search
+            }
+        
+            try {
+                // Fetch paginated and filtered data
+                const items = await botanicalCollection.find(query)
+                    .skip(page * size)
+                    .limit(size)
+                    .toArray();
+        
+                // Get the total count for pagination
+                const totalCount = await botanicalCollection.countDocuments(query);
+        
+                // Send both items and totalCount as a response
+                res.send({ products: items, totalCount });
+            } catch (error) {
+                res.status(500).send({ error: 'Error fetching products' });
+            }
+        });
+
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
